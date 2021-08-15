@@ -8,5 +8,9 @@ repository = "https://github.com/adamgreig/ral-registers"
 license = "MIT OR Apache-2.0"
 keywords = ["mmio", "embedded"]
 categories = ["embedded", "no-std"]
+autoexamples = false
 
 [dependencies]
+
+[dev-dependencies]
+stm32ral = { version = "0.5.0", features = ["stm32f0x0"] }
