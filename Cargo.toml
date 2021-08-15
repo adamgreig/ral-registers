@@ -1,0 +1,12 @@
+[package]
+name = "ral-registers"
+version = "0.1.0"
+authors = ["Adam Greig <adam@adamgreig.com>"]
+edition = "2018"
+description = "MMIO registers abstraction with a macro API"
+repository = "https://github.com/adamgreig/ral-registers"
+license = "MIT OR Apache-2.0"
+keywords = ["mmio", "embedded"]
+categories = ["embedded", "no-std"]
+
+[dependencies]
