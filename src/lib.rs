@@ -280,7 +280,11 @@ macro_rules! write_reg {
         use $periph::{*};
         #[allow(unused_imports)]
         (*$instance).$reg.write(
-            $({ use $periph::{$reg::$field::{mask, offset, W::*, RW::*}}; ($value << offset) & mask }) | *
+            $({
+                use $periph::{$reg::$field::{W::*, RW::*}};
+                ($value << { use $periph::{$reg::$field::offset}; offset })
+                    & { use $periph::{$reg::$field::mask}; mask }
+            }) | *
         );
     }};
     ( $periph:path, $instance:expr, $reg:ident, $value:expr ) => {{
@@ -410,7 +414,12 @@ macro_rules! modify_reg {
         #[allow(unused_imports)]
         (*$instance).$reg.write(
             ((*$instance).$reg.read() & !( $({ use $periph::{$reg::$field::mask}; mask }) | * ))
-            | $({ use $periph::{$reg::$field::{mask, offset, W::*, RW::*}}; ($value << offset) & mask }) | *);
+            | $({
+                use $periph::{$reg::$field::{W::*, RW::*}};
+                ($value << { use $periph::{$reg::$field::offset}; offset })
+                    & { use $periph::{$reg::$field::mask}; mask }
+            }) | *
+        );
     }};
     ( $periph:path, $instance:expr, $reg:ident, $fn:expr ) => {{
         #[allow(unused_imports)]
