@@ -1,6 +1,6 @@
 [package]
 name = "ral-registers"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Adam Greig <adam@adamgreig.com>"]
 edition = "2018"
 description = "MMIO registers abstraction with a macro API"
