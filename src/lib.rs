@@ -194,6 +194,10 @@ impl<T: Copy> UnsafeWORegister<T> {
 /// # }
 /// ```
 ///
+/// To support register arrays, each macro form also supports one or more array indices after the
+/// register. For example, `write_reg!(stm32ral::gpio, gpioa, ODR[2], 42);` writes the value 42 to
+/// the third register in an `ODR` register array.
+///
 /// # Usage
 /// Like `modify_reg!`, this macro can be used in two ways, either with a single value to write to
 /// the whole register, or with multiple fields each with their own value.
@@ -203,7 +207,8 @@ impl<T: Copy> UnsafeWORegister<T> {
 /// * a reference to the instance of that peripheral: 'gpioa' (anything which dereferences to
 ///   `RegisterBlock`, such as `Instance`, `&Instance`, `&RegisterBlock`, or
 ///   `*const RegisterBlock`),
-/// * the register you wish you access: `MODER` (a field on the `RegisterBlock`).
+/// * the register (and offset, for arrays) you wish you access: `MODER` (a field on the
+///   `RegisterBlock`).
 ///
 /// In the single-value usage, the final argument is just the value to write:
 /// ```rust,no_run
@@ -275,11 +280,11 @@ impl<T: Copy> UnsafeWORegister<T> {
 /// and the macro brings such constants into scope and then dereferences the provided reference.
 #[macro_export]
 macro_rules! write_reg {
-    ( $periph:path, $instance:expr, $reg:ident, $( $field:ident : $value:expr ),+ ) => {{
+    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $( $field:ident : $value:expr ),+ ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
         #[allow(unused_imports)]
-        (*$instance).$reg.write(
+        (*$instance).$reg $([$offset])*.write(
             $({
                 use $periph::{$reg::$field::{W::*, RW::*}};
                 ($value << { use $periph::{$reg::$field::offset}; offset })
@@ -287,10 +292,10 @@ macro_rules! write_reg {
             }) | *
         );
     }};
-    ( $periph:path, $instance:expr, $reg:ident, $value:expr ) => {{
+    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $value:expr ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
-        (*$instance).$reg.write($value);
+        (*$instance).$reg $([$offset])*.write($value);
     }};
 }
 
@@ -313,6 +318,10 @@ macro_rules! write_reg {
 /// # }
 /// ```
 ///
+/// To support register arrays, each macro form also supports one or more array indices after the
+/// register. For example, `modify_reg!(stm32ral::gpio, gpioa, ODR[2], |reg| reg | (1<<3));` sets
+/// a high bit in the third register of an `ODR` register array.
+///
 /// # Usage
 /// Like `write_reg!`, this macro can be used in two ways, either with a modification of the entire
 /// register, or by specifying which fields to change and what value to change them to.
@@ -322,7 +331,8 @@ macro_rules! write_reg {
 /// * a reference to the instance of that peripheral: 'gpioa' (anything which dereferences to
 ///   `RegisterBlock`, such as `Instance`, `&Instance`, `&RegisterBlock`, or
 ///   `*const RegisterBlock`),
-/// * the register you wish you access: `MODER` (a field on the `RegisterBlock`).
+/// * the register (and offset, for arrays) you wish you access: `MODER` (a field on the
+///   `RegisterBlock`).
 ///
 /// In the whole-register usage, the final argument is a closure that accepts the current value
 /// of the register and returns the new value to write:
@@ -408,12 +418,12 @@ macro_rules! write_reg {
 /// and the macro brings such constants into scope and then dereferences the provided reference.
 #[macro_export]
 macro_rules! modify_reg {
-    ( $periph:path, $instance:expr, $reg:ident, $( $field:ident : $value:expr ),+ ) => {{
+    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $( $field:ident : $value:expr ),+ ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
         #[allow(unused_imports)]
-        (*$instance).$reg.write(
-            ((*$instance).$reg.read() & !( $({ use $periph::{$reg::$field::mask}; mask }) | * ))
+        (*$instance).$reg $([$offset])*.write(
+            ((*$instance).$reg $([$offset])*.read() & !( $({ use $periph::{$reg::$field::mask}; mask }) | * ))
             | $({
                 use $periph::{$reg::$field::{W::*, RW::*}};
                 ($value << { use $periph::{$reg::$field::offset}; offset })
@@ -421,10 +431,10 @@ macro_rules! modify_reg {
             }) | *
         );
     }};
-    ( $periph:path, $instance:expr, $reg:ident, $fn:expr ) => {{
+    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $fn:expr ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
-        (*$instance).$reg.write($fn((*$instance).$reg.read()));
+        (*$instance).$reg $([$offset])*.write($fn((*$instance).$reg $([$offset])*.read()));
     }};
 }
 
@@ -453,6 +463,10 @@ macro_rules! modify_reg {
 /// # }
 /// ```
 ///
+/// To support register arrays, each macro form also supports one or more array indices after the
+/// register. For example, `read_reg!(stm32ral::gpio, gpioa, ODR[2]);` reads from the third
+/// register of an `ODR` register array.
+///
 /// # Usage
 /// Like `write_reg!`, this macro can be used multiple ways, either reading the entire register or
 /// reading a one or more fields from it and potentially performing a comparison with one field.
@@ -462,7 +476,8 @@ macro_rules! modify_reg {
 /// * a reference to the instance of that peripheral: 'gpioa' (anything which dereferences to
 ///   `RegisterBlock`, such as `Instance`, `&Instance`, `&RegisterBlock`, or
 ///   `*const RegisterBlock`),
-/// * the register you wish to access: `IDR` (a field on the `RegisterBlock`).
+/// * the register (and offset, for arrays) you wish to access: `IDR` (a field on the
+///   `RegisterBlock`).
 ///
 /// In the whole-register usage, the macro simply returns the register's value:
 /// ```rust,no_run
@@ -527,27 +542,27 @@ macro_rules! modify_reg {
 /// and the macro brings such constants into scope and then dereferences the provided reference.
 #[macro_export]
 macro_rules! read_reg {
-    ( $periph:path, $instance:expr, $reg:ident, $( $field:ident ),+ ) => {{
+    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $( $field:ident ),+ ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
-        let val = ((*$instance).$reg.read());
+        let val = ((*$instance).$reg $([$offset])*.read());
         ( $({
             #[allow(unused_imports)]
             use $periph::{$reg::$field::{mask, offset, R::*, RW::*}};
             (val & mask) >> offset
         }) , *)
     }};
-    ( $periph:path, $instance:expr, $reg:ident, $field:ident $($cmp:tt)* ) => {{
+    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $field:ident $($cmp:tt)* ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
         #[allow(unused_imports)]
         use $periph::{$reg::$field::{mask, offset, R::*, RW::*}};
-        (((*$instance).$reg.read() & mask) >> offset) $($cmp)*
+        (((*$instance).$reg $([$offset])*.read() & mask) >> offset) $($cmp)*
     }};
-    ( $periph:path, $instance:expr, $reg:ident ) => {{
+    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])* ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
-        ((*$instance).$reg.read())
+        ((*$instance).$reg $([$offset])*.read())
     }};
 }
 
@@ -567,6 +582,10 @@ macro_rules! read_reg {
 /// # }
 /// ```
 ///
+/// To support register arrays, each macro form also supports one or more array indices after
+/// the register. For example, `reset_reg!(stm32ral::gpio, gpioa, GPIOA, ODR[2]);` resets the
+/// third register in an `ODR` register array.
+///
 /// # Usage
 /// Like `write_reg!`, this macro can be used in two ways, either resetting the entire register
 /// or just resetting specific fields within in. The register or fields are written with their
@@ -578,7 +597,8 @@ macro_rules! read_reg {
 ///   `RegisterBlock`, such as `Instance`, `&Instance`, `&RegisterBlock`, or
 ///   `*const RegisterBlock`),
 /// * the module for the instance of that peripheral: `GPIOA`,
-/// * the register you wish to access: `MODER` (a field on the `RegisterBlock`).
+/// * the register (and offset, for arrays) you wish to access: `MODER` (a field on the
+///   `RegisterBlock`).
 ///
 /// In the whole-register usage, that's it:
 /// ```rust,no_run
@@ -624,20 +644,20 @@ macro_rules! read_reg {
 /// `GPIOA` they are not the same thing.
 #[macro_export]
 macro_rules! reset_reg {
-    ( $periph:path, $instance:expr, $instancemod:path, $reg:ident, $( $field:ident ),+ ) => {{
+    ( $periph:path, $instance:expr, $instancemod:path, $reg:ident $([$offset:expr])*, $( $field:ident ),+ ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
         use $periph::{$instancemod::{reset}};
         #[allow(unused_imports)]
-        (*$instance).$reg.write({
+        (*$instance).$reg $([$offset])*.write({
             let resetmask: u32 = $({ use $periph::{$reg::$field::mask}; mask }) | *;
-            ((*$instance).$reg.read() & !resetmask) | (reset.$reg & resetmask)
+            ((*$instance).$reg $([$offset])*.read() & !resetmask) | (reset.$reg & resetmask)
         });
     }};
-    ( $periph:path, $instance:expr, $instancemod:path, $reg:ident ) => {{
+    ( $periph:path, $instance:expr, $instancemod:path, $reg:ident $([$offset:expr])*) => {{
         #[allow(unused_imports)]
         use $periph::{*};
         use $periph::{$instancemod::{reset}};
-        (*$instance).$reg.write(reset.$reg);
+        (*$instance).$reg $([$offset])*.write(reset.$reg);
     }};
 }
