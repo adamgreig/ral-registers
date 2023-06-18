@@ -101,6 +101,7 @@ macro_rules! read_reg_test_cases {
 
         assert_eq!(ral::read_reg!(periph, $instance, $register $([$offset])*, FIELD_A), 0x7F, "Individual field read (A)");
         assert_eq!(ral::read_reg!(periph, $instance, $register $([$offset])*, FIELD_B), 0b11, "Individual field read (B)");
+        assert_eq!(ral::read_reg!(periph, $instance, $register $([$offset])*, FIELD_A,), 0x7F, "Individual field read with trailing comma");
 
         assert_eq!(
             ral::read_reg!(periph, $instance, $register $([$offset])*, FIELD_A, FIELD_B),
@@ -175,6 +176,8 @@ macro_rules! write_reg_test_cases {
         assert_eq!((*$instance).$register $([$offset])*.read(), 0x7F, "1:1 write:field (A)");
         ral::write_reg!(periph, $instance, $register $([$offset])*, FIELD_B: u32::MAX);
         assert_eq!((*$instance).$register $([$offset])*.read(), 0b11 << 27, "1:1 write:field (B)");
+        ral::write_reg!(periph, $instance, $register $([$offset])*, FIELD_A: u32::MAX,);
+        assert_eq!((*$instance).$register $([$offset])*.read(), 0x7F, "write with trailing comma");
 
         ral::write_reg!(
             periph,
@@ -256,6 +259,8 @@ macro_rules! modify_reg_test_cases {
         assert_eq!((*$instance).$register $([$offset])*.read(), 0x7F, "RMW individual fields (A)");
         ral::modify_reg!(periph, $instance, $register $([$offset])*, FIELD_B: u32::MAX);
         assert_eq!((*$instance).$register $([$offset])*.read(), 0x7F | (0b11 << 27), "RMW individual fields (B)");
+        ral::modify_reg!(periph, $instance, $register $([$offset])*, FIELD_A: u32::MIN,);
+        assert_eq!((*$instance).$register $([$offset])*.read(), (0b11 << 27), "RMW with trailing comma");
 
         ral::modify_reg!(periph, $instance, $register $([$offset])*, FIELD_A: 2, FIELD_B: 2);
         assert_eq!((*$instance).$register $([$offset])*.read(), 2 | (2 << 27), "RMW multiple fields");
@@ -343,6 +348,11 @@ macro_rules! reset_reg_test_cases {
             u32::MAX & !(0b11 << 27) & !0x7F | 42,
             "Field in register (A)"
         );
+
+        (*$instance).$register $([$offset])*.write(u32::MAX);
+        ral::reset_reg!(periph, $instance, INST, $register $([$offset])*, FIELD_B,);
+        assert_eq!((*$instance).$register $([$offset])*.read(), u32::MAX & !(0b11 << 27), "With trailing comma");
+
 
         (*$instance).$register $([$offset])*.write(u32::MAX);
         ral::reset_reg!(periph, $instance, INST, $register $([$offset])*, FIELD_B, FIELD_A);

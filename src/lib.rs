@@ -280,7 +280,7 @@ impl<T: Copy> UnsafeWORegister<T> {
 /// and the macro brings such constants into scope and then dereferences the provided reference.
 #[macro_export]
 macro_rules! write_reg {
-    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $( $field:ident : $value:expr ),+ ) => {{
+    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $( $field:ident : $value:expr ),+ $(,)? ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
         #[allow(unused_imports)]
@@ -418,7 +418,7 @@ macro_rules! write_reg {
 /// and the macro brings such constants into scope and then dereferences the provided reference.
 #[macro_export]
 macro_rules! modify_reg {
-    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $( $field:ident : $value:expr ),+ ) => {{
+    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $( $field:ident : $value:expr ),+ $(,)? ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
         #[allow(unused_imports)]
@@ -542,7 +542,7 @@ macro_rules! modify_reg {
 /// and the macro brings such constants into scope and then dereferences the provided reference.
 #[macro_export]
 macro_rules! read_reg {
-    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $( $field:ident ),+ ) => {{
+    ( $periph:path, $instance:expr, $reg:ident $([$offset:expr])*, $( $field:ident ),+ $(,)? ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
         let val = ((*$instance).$reg $([$offset])*.read());
@@ -644,7 +644,7 @@ macro_rules! read_reg {
 /// `GPIOA` they are not the same thing.
 #[macro_export]
 macro_rules! reset_reg {
-    ( $periph:path, $instance:expr, $instancemod:path, $reg:ident $([$offset:expr])*, $( $field:ident ),+ ) => {{
+    ( $periph:path, $instance:expr, $instancemod:path, $reg:ident $([$offset:expr])*, $( $field:ident ),+ $(,)? ) => {{
         #[allow(unused_imports)]
         use $periph::{*};
         use $periph::{$instancemod::{reset}};
